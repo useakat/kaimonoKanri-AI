@@ -1,0 +1,89 @@
+table: products
+columns:
+  id:
+    type: string
+    required: true
+    default: null
+    description: 商品ID (プライマリーキー)
+    primary_key: true
+
+  name:
+    type: string
+    required: true
+    default: null
+    description: 商品名
+
+  image_path:
+    type: string
+    required: false
+    default: null
+    description: 商品画像のパス
+
+  order_url:
+    type: string
+    required: false
+    default: null
+    description: 商品注文URL
+
+  barcode:
+    type: string
+    required: false
+    default: null
+    description: バーコード
+
+  status:
+    type: enum
+    values:
+      - 在庫あり
+      - 要購入
+    required: true
+    default: 在庫あり
+    description: 購入フラグ (在庫あり/要購入)
+
+  description:
+    type: text
+    required: false
+    default: null
+    description: 商品概要
+
+  yahoo_checked:
+    type: boolean
+    required: true
+    default: false
+    description: Yahoo APIでのチェック状態
+
+  webhook_checked:
+    type: boolean
+    required: true
+    default: false
+    description: Webhookでのチェック状態
+
+  purchase_location:
+    type: string
+    required: true
+    default: null
+    description: 購入先
+
+  stock_quantity:
+    type: integer
+    required: false
+    default: 1
+    description: 在庫数
+
+  minimum_stock:
+    type: integer
+    required: false
+    default: 1
+    description: 適正在庫下限
+
+  created_at:
+    type: timestamp
+    required: true
+    default: CURRENT_TIMESTAMP
+    description: 作成日時
+
+  updated_at:
+    type: timestamp
+    required: true
+    default: CURRENT_TIMESTAMP
+    description: 更新日時

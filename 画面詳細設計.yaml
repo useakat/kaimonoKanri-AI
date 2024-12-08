@@ -1,0 +1,353 @@
+screens:
+  - name: 在庫一覧画面
+    type: メインタブ1
+    display_items:
+      header:
+        - title: アプリタイトル
+        - icons:
+            - type: 設定メニュー
+              position: 右上
+            - type: 通知
+              position: 右上
+              badge: 未読件数
+      search_filter:
+        - search_bar:
+            type: 商品名、バーコード検索
+        - tag_filter:
+            type: 選択式タグ一覧
+        - sort_dropdown:
+            options:
+              - 商品名（昇順/降順）
+              - 在庫数（昇順/降順）
+              - 要購入アラート（アラート優先）
+      product_list:
+        scrollable: true
+        items:
+          - image:
+              position: 左端
+          - name:
+              style: 太字
+          - current_stock:
+              type: 数値
+          - min_stock:
+              style: グレー文字
+          - status_icon:
+              condition: 要購入時に警告表示
+          - buttons:
+              - type: 増減
+                label: +/-
+              - type: 編集
+                position: 右端
+              - type: 削除
+                position: 一番右端
+      floating_button:
+        type: 新規商品登録
+        label: ＋
+        position: 右下固定
+    button_actions:
+      - trigger: 設定メニュー押下
+        action: 設定画面に遷移
+      - trigger: 通知アイコン押下
+        actions:
+          - 通知一覧画面に遷移
+          - バッジカウントをクリア
+      - trigger: 検索バー入力
+        actions:
+          - リアルタイムフィルタリング
+          - バーコードスキャナー起動（アイコン押下時）
+      - trigger: タグフィルター選択
+        actions:
+          - 該当商品のみ表示
+          - 複数選択可能
+      - trigger: 並び替え選択
+        action: 即時ソート
+      - trigger: 商品アイテム押下
+        action: 商品詳細画面に遷移
+      - trigger: 在庫増減ボタン押下
+        actions:
+          - 増減確認ダイアログ表示
+          - 在庫数更新
+          - 要購入リストへの自動追加（最小在庫数下回り時）
+      - trigger: 商品編集アイコン押下
+        action: 商品編集画面に遷移
+      - trigger: 商品削除アイコン押下
+        actions:
+          - 削除確認ダイアログ表示
+          - 商品削除
+      - trigger: 新規登録ボタン押下
+        action: 商品登録画面に遷移
+
+  - name: 商品登録・編集画面
+    display_items:
+      header:
+        - title: 商品登録/商品編集
+        - buttons:
+            - type: キャンセル
+              position: 左
+            - type: 保存
+              position: 右
+      input_form:
+        - product_image:
+            - placeholder_image: true
+            - image_select_button: true
+        - barcode:
+            - input_field: true
+            - scan_button: true
+        - yahoo_search:
+            - search_button: true
+            - results_area: true
+        - product_name:
+            required: true
+        - min_stock:
+            required: true
+        - tags:
+            - multiple_select: true
+            - add_new_button: true
+        - purchase_source:
+            - type: ラジオボタン
+            - url_field:
+                condition: ネット選択時のみ表示
+    button_actions:
+      - trigger: キャンセルボタン押下
+        actions:
+          - 変更破棄確認ダイアログ表示
+          - 前画面に戻る
+      - trigger: 保存ボタン押下
+        actions:
+          - 入力値バリデーション実行
+          - エラー表示（該当フィールド赤枠）
+          - 在庫一覧画面に戻る
+      - trigger: 画像選択ボタン押下
+        options:
+          - カメラ起動
+          - ギャラリーから選択
+      - trigger: バーコードスキャンボタン押下
+        actions:
+          - カメラ起動
+          - スキャナー表示
+          - Yahoo商品検索自動実行
+      - trigger: Yahoo商品検索ボタン押下
+        actions:
+          - 検索結果リスト表示
+          - フィールド自動入力
+      - trigger: 新規タグ追加ボタン押下
+        actions:
+          - タグ名入力ダイアログ表示
+          - 選択済みタグとして追加
+
+  - name: 購入リスト画面
+    type: メインタブ2
+    display_items:
+      header:
+        title: 購入リスト
+      tabs:
+        - 生協
+        - 店舗
+        - ネット
+      product_list:
+        items:
+          - image:
+              size: 小
+          - name: true
+          - required_amount:
+              style: グレー表示
+          - purchase_amount:
+              type: 数値入力
+              default: 0
+              stepper: true
+          - url_link:
+              condition: ネットタブのみ
+      footer:
+        purchase_complete_button:
+          display: 常時表示
+    button_actions:
+      - trigger: タブ切り替え
+        actions:
+          - 対応商品リスト表示
+          - URLリンク表示（ネットタブ）
+      - trigger: 購入数量ステッパー
+        actions:
+          - プラスボタン：1増加
+          - マイナスボタン：1減少（最小0）
+      - trigger: 購入数量フィールド
+        constraints:
+          - 直接数値入力可能
+          - 0以上の整数のみ
+      - trigger: 購入URLリンク押下
+        action: 外部ブラウザで開く
+      - trigger: 購入完了ボタン押下
+        actions:
+          - 確認ダイアログ表示：
+              - 数量が0より大きい商品のみ表示
+              - 合計購入点数表示
+          - 確定時：
+              - 数量が0より大きい商品のみ処理
+              - 在庫数を購入数量分増加
+              - 購入履歴記録
+              - 処理完了商品を削除
+          - キャンセル時：
+              - 画面維持
+
+  - name: 商品詳細画面
+      display_items:
+        header:
+          - button:
+              type: 戻る
+              position: 左
+          - title: 商品名
+          - buttons:
+              - type: 編集
+                position: 右
+              - type: 削除
+                position: 右
+        basic_info:
+          - product_image:
+              size: 大
+          - current_stock:
+              style: 大きな数字
+          - min_stock: true
+          - tags_list: true
+          - purchase_source: true
+          - barcode: true
+        operation:
+          - stock_buttons:
+              type: 増減
+              style: 大きな＋/−ボタン
+          - quantity_input: true
+        history:
+          type: タブ切り替え
+          tabs:
+            - name: 在庫履歴
+              items:
+                - date: true
+                - operation_type: 増加/減少
+                - quantity: true
+            - name: 購入履歴
+              items:
+                - date: true
+                - source: true
+                - quantity: true
+        graphs:
+          - consumption_trend:
+              period: 直近3ヶ月
+          - stock_transition: true
+      button_actions:
+        - trigger: 編集ボタン押下
+          action: 商品編集画面に遷移
+        - trigger: 削除ボタン押下
+          actions:
+            - 削除確認ダイアログ表示
+            - 商品削除
+            - 在庫一覧に戻る
+        - trigger: 在庫数増減ボタン押下
+          actions:
+            - 数量増減
+            - 連続変更（長押し時）
+            - 履歴自動記録
+            - アラート表示（最小在庫数下回り時）
+        - trigger: 購入先URLリンク押下
+          action: 外部ブラウザで開く
+  
+    - name: 分析画面
+      display_items:
+        header:
+          - title: 分析
+          - period_selector:
+              type: ドロップダウン
+              position: 右上
+        summary:
+          - total_products: true
+          - purchase_required: true
+          - out_of_stock: true
+        consumption_trend:
+          - line_graph:
+              x_axis: 時間
+              y_axis: 消費量
+          - average_consumption: true
+          - previous_period_comparison: true
+        category_analysis:
+          - pie_charts:
+              - product_distribution: true
+              - consumption_distribution: true
+          - tag_rankings: true
+        stock_transition:
+          - stacked_graph:
+              x_axis: 時間
+              y_axis: 在庫数
+      button_actions:
+        - trigger: 期間選択
+          options:
+            - 1週間
+            - 1ヶ月
+            - 3ヶ月
+            - 6ヶ月
+            - 1年
+          action: 全グラフ更新
+        - trigger: グラフ要素タップ
+          action: 詳細情報ポップアップ表示
+        - trigger: タグ選択
+          action: 選択タグのデータのみ表示
+  
+    - name: バーコードスキャン画面
+      display_items:
+        camera_viewfinder:
+          - scan_guide: true
+          - flash_button: true
+        manual_input_button: true
+        result_area:
+          - barcode_number: true
+          - scan_status: true
+      button_actions:
+        - trigger: フラッシュライトボタン押下
+          action: フラッシュON/OFF切り替え
+        - trigger: 手動入力切替ボタン押下
+          action: バーコード手動入力ダイアログ表示
+        - trigger: バーコード認識時
+          actions:
+            - バイブレーション実行
+            - 結果表示
+            - Yahoo商品検索API実行
+            - 商品登録画面遷移（データ自動入力）
+  
+    - name: 設定画面
+      display_items:
+        account_settings:
+          - password_change: true
+          - email_change: true
+        app_settings:
+          - dark_mode:
+              type: 切替スイッチ
+          - notifications:
+              - stock_alert:
+                  type: ON/OFF
+        tag_management:
+          - tag_list:
+              items:
+                - name: true
+                - usage_count: true
+                - buttons:
+                    - type: 編集
+                    - type: 削除
+          - add_tag_button: true
+        other:
+          - app_version: true
+          - logout_button: true
+      button_actions:
+        - trigger: パスワード変更押下
+          action: パスワード変更画面に遷移
+        - trigger: メールアドレス変更押下
+          action: メールアドレス変更画面に遷移
+        - trigger: ダークモード切替
+          action: テーマ即時切替
+        - trigger: タグ編集ボタン押下
+          action: タグ編集ダイアログ表示
+        - trigger: タグ削除ボタン押下
+          actions:
+            - 削除確認ダイアログ表示
+            - 関連商品からタグ削除
+        - trigger: 新規タグ追加ボタン押下
+          action: タグ作成ダイアログ表示
+        - trigger: ログアウトボタン押下
+          actions:
+            - ログアウト確認ダイアログ表示
+            - ログイン画面に遷移

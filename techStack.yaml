@@ -1,0 +1,18 @@
+development_environment:
+  frontend: "Next.js"
+  language: "TypeScript"
+  css: "TailwindCSS"
+  ui: "Radix UI"
+  backend: "Next.js"
+  javascript_runtime: "Node.js"
+  linter: "ESLint"
+  formatter: "Prettier"
+  test_framework: "Playwright"
+  database: "PostgresSQL on docker container"
+    primary_key: "CUID"
+  orm: "Prisma"
+      
+production_environment:
+  database: "PostgresSQL"
+  deployment: "Vercel"
+  logging: "Structured Logging"

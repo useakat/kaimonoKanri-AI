@@ -1,0 +1,44 @@
+stateDiagram-v2
+    [*] --> ログイン
+    ログイン --> アカウント作成: アカウント作成リンク
+    アカウント作成 --> ログイン: 作成完了
+    
+    ログイン --> メイン画面: ログイン成功
+    
+    state メイン画面 {
+        state "在庫一覧" as Stock
+        state "購入リスト" as PurchaseList
+        state "分析" as Analysis
+        
+        Stock --> PurchaseList: タブ切替
+        PurchaseList --> Stock: タブ切替
+        Stock --> Analysis: タブ切替
+        Analysis --> Stock: タブ切替
+        PurchaseList --> Analysis: タブ切替
+        Analysis --> PurchaseList: タブ切替
+    }
+    
+    メイン画面 --> 設定: 設定アイコン
+    設定 --> メイン画面: 戻る
+    設定 --> ログイン: ログアウト
+    
+    メイン画面 --> 通知一覧: 通知アイコン
+    通知一覧 --> メイン画面: 戻る
+    
+    Stock --> 商品詳細: 商品タップ
+    商品詳細 --> Stock: 戻る
+    
+    Stock --> 商品登録: 新規登録ボタン
+    商品登録 --> Stock: 保存/キャンセル
+    
+    Stock --> 商品編集: 編集アイコン
+    商品詳細 --> 商品編集: 編集ボタン
+    商品編集 --> Stock: 保存/キャンセル
+    商品編集 --> 商品詳細: 保存/キャンセル
+    
+    商品登録 --> バーコードスキャン: スキャンボタン
+    商品編集 --> バーコードスキャン: スキャンボタン
+    バーコードスキャン --> 商品登録: 読取成功
+    バーコードスキャン --> 商品編集: 読取成功
+    
+    PurchaseList --> WebブラウザOuterLink: URLリンク（ネット商品）

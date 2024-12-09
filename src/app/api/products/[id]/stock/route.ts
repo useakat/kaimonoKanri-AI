@@ -11,34 +11,21 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export const dynamic = 'force-dynamic';
 
-// PUT /products/{id}/stock - 在庫数更新
-export async function PUT(
+// PATCH /products/{id}/stock - 在庫数変更
+export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
+    const { change } = await request.json();
 
-    // バリデーション: stock_quantityの存在確認
-    if (body.stock_quantity === undefined) {
+    // 入力バリデーション
+    if (change === undefined || !Number.isInteger(change)) {
       return NextResponse.json(
         {
           error: {
             code: "INVALID_REQUEST",
-            message: "stock_quantity は必須フィールドです"
-          }
-        },
-        { status: 400 }
-      );
-    }
-
-    // バリデーション: stock_quantityの値チェック
-    if (body.stock_quantity < 0 || !Number.isInteger(body.stock_quantity)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "INVALID_REQUEST",
-            message: "stock_quantity は0以上の整数である必要があります"
+            message: "変更量は整数である必要があります"
           }
         },
         { status: 400 }
@@ -47,9 +34,7 @@ export async function PUT(
 
     // 商品の存在確認
     const existingProduct = await prisma.product.findUnique({
-      where: {
-        id: params.id
-      }
+      where: { id: params.id }
     });
 
     if (!existingProduct) {
@@ -64,28 +49,41 @@ export async function PUT(
       );
     }
 
-    // 在庫数の更新
+    // 新しい在庫数の計算
+    const newStockQuantity = existingProduct.stock_quantity + change;
+
+    // 在庫数が0未満にならないようチェック
+    if (newStockQuantity < 0) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "INVALID_REQUEST",
+            message: "在庫数が0未満になることはできません"
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // 商品の在庫数更新
     const updatedProduct = await prisma.product.update({
-      where: {
-        id: params.id
-      },
-      data: {
-        stock_quantity: body.stock_quantity
-      }
+      where: { id: params.id },
+      data: { stock_quantity: newStockQuantity }
     });
 
     return NextResponse.json({
       id: updatedProduct.id,
-      current_stock: updatedProduct.stock_quantity,
+      stock_quantity: updatedProduct.stock_quantity,
       message: "在庫数が正常に更新されました"
     });
+
   } catch (error) {
-    console.error('Error updating stock:', error);
+    console.error('Error updating product stock:', error);
     return NextResponse.json(
       {
         error: {
           code: "INTERNAL_SERVER_ERROR",
-          message: "サーバー内部でエラーが発生しました"
+          message: "在庫数の更新中にエラーが発生しました"
         }
       },
       { status: 500 }

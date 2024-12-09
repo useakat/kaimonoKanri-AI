@@ -21,7 +21,7 @@ const products = [
     description: '毎日の朝食用の食パン',
     purchase_location: stores[0],
     stock_quantity: 2,
-    minimum_stock: 1
+    minimum_stock: 3
   },
   {
     name: 'トイレットペーパー',
@@ -35,7 +35,7 @@ const products = [
     description: '1000ml 成分無調整',
     purchase_location: stores[2],
     stock_quantity: 1,
-    minimum_stock: 1
+    minimum_stock: 2
   },
   {
     name: 'コーヒー豆',
@@ -49,14 +49,14 @@ const products = [
     description: '新潟県産コシヒカリ 5kg',
     purchase_location: stores[4],
     stock_quantity: 1,
-    minimum_stock: 1
+    minimum_stock: 2
   },
   {
     name: 'ティッシュペーパー',
     description: '5箱パック',
     purchase_location: stores[5],
     stock_quantity: 2,
-    minimum_stock: 1
+    minimum_stock: 3
   },
   {
     name: 'シャンプー',
@@ -69,8 +69,8 @@ const products = [
     name: 'ハンドソープ',
     description: '泡タイプ 詰め替え用',
     purchase_location: stores[9],
-    stock_quantity: 2,
-    minimum_stock: 1
+    stock_quantity: 1,
+    minimum_stock: 2
   },
   {
     name: 'キッチンペーパー',
@@ -84,21 +84,28 @@ const products = [
     description: 'ミント味 大容量',
     purchase_location: stores[9],
     stock_quantity: 1,
-    minimum_stock: 1
+    minimum_stock: 2
   }
 ]
 
 async function main() {
   console.log('Start seeding...')
   
+  // 既存のデータを削除
+  await prisma.product.deleteMany()
+  
   for (const product of products) {
+    const status = product.stock_quantity < product.minimum_stock 
+      ? Status.NEED_TO_BUY 
+      : Status.IN_STOCK
+
     const result = await prisma.product.create({
       data: {
         ...product,
-        status: Math.random() > 0.7 ? Status.NEED_TO_BUY : Status.IN_STOCK
+        status
       }
     })
-    console.log(`Created product with id: ${result.id}`)
+    console.log(`Created product with id: ${result.id} - Status: ${result.status}`)
   }
   
   console.log('Seeding finished.')

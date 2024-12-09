@@ -11,33 +11,53 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export const dynamic = 'force-dynamic';
 
-// POST /products/{barcode}/yahoo-check - Yahoo APIチェック
+// POST /products/{id}/yahoo-check - Yahoo APIチェック
 export async function POST(
   request: Request,
-  { params }: { params: { barcode: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const barcode = params.barcode;
+    const id = params.id;
 
-    // バーコードのバリデーション
-    if (!barcode || barcode.length < 8) {
+    // IDのバリデーション
+    if (!id) {
       return NextResponse.json(
         {
           error: {
             code: "INVALID_REQUEST",
-            message: "有効なバーコードを指定してください"
+            message: "有効な商品IDを指定してください"
           }
         },
         { status: 400 }
       );
     }
 
+    // 商品を取得
+    const product = await prisma.product.findUnique({
+      where: {
+        id: id
+      }
+    });
+
+    if (!product) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "NOT_FOUND",
+            message: "指定された商品が見つかりません"
+          }
+        },
+        { status: 404 }
+      );
+    }
+
     // Note: ここでは簡単なモックレスポンスを返します
     // 実際の実装では、Yahoo APIを呼び出して実際の商品情報を取得する必要があります
     const mockYahooResponse = {
-      barcode: barcode,
+      id: id,
+      barcode: product.barcode,
       product_info: {
-        name: `Yahoo商品 (${barcode})`,
+        name: `Yahoo商品 (${product.barcode})`,
         price: Math.floor(Math.random() * 10000) + 100,
         availability: Math.random() > 0.5
       },
@@ -45,22 +65,14 @@ export async function POST(
     };
 
     // 商品のyahoo_checkedフラグを更新
-    const product = await prisma.product.findFirst({
+    await prisma.product.update({
       where: {
-        barcode: barcode
+        id: id
+      },
+      data: {
+        yahoo_checked: true
       }
     });
-
-    if (product) {
-      await prisma.product.update({
-        where: {
-          id: product.id
-        },
-        data: {
-          yahoo_checked: true
-        }
-      });
-    }
 
     return NextResponse.json(mockYahooResponse);
   } catch (error) {

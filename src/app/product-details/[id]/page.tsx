@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { FaArrowLeft, FaEdit, FaTrash, FaChartLine, FaHistory } from 'react-icons/fa';
 import { Line } from 'react-chartjs-2';
 import { 
@@ -28,13 +29,13 @@ ChartJS.register(
 interface ProductDetail {
   id: string;
   name: string;
-  image: string;
-  currentStock: number;
-  minStock: number;
-  tags: string[];
-  purchaseSource: 'store' | 'online';
-  purchaseUrl?: string;
-  barcode: string;
+  image_path?: string;
+  stock_quantity: number;
+  minimum_stock: number;
+  description?: string;
+  purchase_location?: string;
+  barcode?: string;
+  tags?: string[];
 }
 
 interface StockHistoryItem {
@@ -50,19 +51,36 @@ interface PurchaseHistoryItem {
 }
 
 export default function ProductDetailsPage() {
-  const [product, setProduct] = useState<ProductDetail>({
-    id: '1',
-    name: 'サンプル商品',
-    image: '/placeholder-product.png',
-    currentStock: 10,
-    minStock: 5,
-    tags: ['生鮮食品', '日用品'],
-    purchaseSource: 'store',
-    barcode: '1234567890'
-  });
+  const router = useRouter();
+  const params = useParams();
+  const productId = params?.id as string;
 
+  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'stock' | 'purchase'>('stock');
-  const [stockQuantity, setStockQuantity] = useState(product.currentStock);
+
+  useEffect(() => {
+    async function fetchProductDetails() {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/products/${productId}`);
+        if (!response.ok) {
+          throw new Error('商品の取得に失敗しました');
+        }
+        const data = await response.json();
+        setProduct(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (productId) {
+      fetchProductDetails();
+    }
+  }, [productId]);
 
   const stockHistory: StockHistoryItem[] = [
     { date: '2024-01-15', type: 'increase', quantity: 5 },
@@ -86,33 +104,82 @@ export default function ProductDetailsPage() {
     ]
   };
 
-  const handleStockChange = (change: number) => {
-    const newStock = Math.max(0, stockQuantity + change);
-    setStockQuantity(newStock);
+  const handleStockChange = async (change: number) => {
+    if (!product) return;
 
-    // TODO: Implement actual stock update logic
-    // - Record stock history
-    // - Check against minimum stock
-    // - Trigger alerts if needed
+    try {
+      const response = await fetch(`/api/products/${productId}/stock`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ change })
+      });
+
+      if (!response.ok) {
+        throw new Error('在庫の更新に失敗しました');
+      }
+
+      const updatedProduct = await response.json();
+      setProduct(prev => prev ? { ...prev, stock_quantity: updatedProduct.stock_quantity } : null);
+    } catch (err) {
+      console.error('在庫更新エラー:', err);
+      alert(err instanceof Error ? err.message : '在庫の更新中にエラーが発生しました');
+    }
   };
 
   const handleEdit = () => {
-    // Navigate to edit page
-    console.log('Navigate to edit page');
+    router.push(`/product?id=${productId}`);
   };
 
-  const handleDelete = () => {
-    if (window.confirm('この商品を削除しますか？')) {
-      // TODO: Implement delete logic
-      console.log('Delete product');
+  const handleDelete = async () => {
+    if (!product || !window.confirm('この商品を削除しますか？')) return;
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('商品の削除に失敗しました');
+      }
+
+      router.push('/inventory');
+    } catch (err) {
+      console.error('削除エラー:', err);
+      alert(err instanceof Error ? err.message : '商品の削除中にエラーが発生しました');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--primary)] border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center">
+          <p className="text-red-500">{error || '商品が見つかりません'}</p>
+          <button 
+            onClick={() => router.push('/inventory')}
+            className="mt-4 text-blue-600 hover:underline"
+          >
+            在庫一覧に戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4">
       <header className="flex justify-between items-center mb-6">
         <button 
-          onClick={() => window.history.back()}
+          onClick={() => router.push('/inventory')}
           className="text-gray-600 hover:text-gray-900"
         >
           <FaArrowLeft className="text-2xl" />
@@ -138,7 +205,7 @@ export default function ProductDetailsPage() {
         {/* Product Image and Basic Info */}
         <div className="text-center">
           <img 
-            src={product.image} 
+            src={product.image_path || '/placeholder-product.png'} 
             alt={product.name} 
             className="mx-auto w-64 h-64 object-cover rounded-lg shadow-md mb-4" 
           />
@@ -146,47 +213,43 @@ export default function ProductDetailsPage() {
           <div className="space-y-2">
             <div>
               <label className="block text-sm font-medium text-gray-700">現在の在庫</label>
-              <p className="text-4xl font-bold text-blue-600">{stockQuantity}</p>
+              <p className="text-4xl font-bold text-blue-600">{product.stock_quantity}</p>
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700">最小在庫数</label>
-              <p>{product.minStock}</p>
+              <p>{product.minimum_stock}</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">タグ</label>
-              <div className="flex justify-center space-x-2 mt-1">
-                {product.tags.map(tag => (
-                  <span 
-                    key={tag} 
-                    className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                  >
-                    {tag}
-                  </span>
-                ))}
+            {product.tags && product.tags.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">タグ</label>
+                <div className="flex justify-center space-x-2 mt-1">
+                  {product.tags.map(tag => (
+                    <span 
+                      key={tag} 
+                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">購入先</label>
-              <p>{product.purchaseSource === 'store' ? '店舗' : 'オンライン'}</p>
-              {product.purchaseUrl && (
-                <a 
-                  href={product.purchaseUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  購入リンク
-                </a>
-              )}
-            </div>
+            {product.purchase_location && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">購入先</label>
+                <p>{product.purchase_location}</p>
+              </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">バーコード</label>
-              <p>{product.barcode}</p>
-            </div>
+            {product.barcode && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">バーコード</label>
+                <p>{product.barcode}</p>
+              </div>
+            )}
           </div>
         </div>
 

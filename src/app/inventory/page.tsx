@@ -88,7 +88,7 @@ export default function InventoryPage() {
   };
 
   const handleProductEdit = (productId: string) => {
-    router.push(`/product-details?id=${productId}`);
+    router.push(`/product-details/${productId}`);
   };
 
   const handleProductDelete = async (productId: string) => {
@@ -220,7 +220,14 @@ export default function InventoryPage() {
           {filteredAndSortedProducts.map(product => (
             <div 
               key={product.id} 
-              className="card flex items-center space-x-4 slide-up"
+              className="card flex items-center space-x-4 slide-up cursor-pointer hover:shadow-md transition-shadow"
+              onClick={(e) => {
+                // イベントの伝播を停止して、ボタンクリックとの競合を防ぐ
+                if ((e.target as HTMLElement).closest('button')) {
+                  return;
+                }
+                handleProductEdit(product.id);
+              }}
             >
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                 <img 
@@ -251,13 +258,19 @@ export default function InventoryPage() {
               </div>
               <div className="flex flex-col space-y-2">
                 <button 
-                  onClick={() => handleStockChange(product.id, 1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStockChange(product.id, 1);
+                  }}
                   className="stock-btn stock-increase"
                 >
                   +
                 </button>
                 <button 
-                  onClick={() => handleStockChange(product.id, -1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStockChange(product.id, -1);
+                  }}
                   className="stock-btn stock-decrease"
                 >
                   -
@@ -265,13 +278,19 @@ export default function InventoryPage() {
               </div>
               <div className="flex flex-col space-y-2">
                 <button 
-                  onClick={() => handleProductEdit(product.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProductEdit(product.id);
+                  }}
                   className="text-[var(--secondary)] hover:scale-110 transition-transform"
                 >
                   <FaEdit className="text-xl" />
                 </button>
                 <button 
-                  onClick={() => handleProductDelete(product.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProductDelete(product.id);
+                  }}
                   className="text-[var(--primary)] hover:scale-110 transition-transform"
                 >
                   <FaTrash className="text-xl" />

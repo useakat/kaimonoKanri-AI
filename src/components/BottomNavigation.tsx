@@ -44,23 +44,35 @@ export default function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t z-50">
-      <div className="grid grid-cols-5">
-        {navItems.map(({ href, icon: Icon, label }) => (
-          <Link 
-            key={href} 
-            href={href}
-            className={`
-              flex flex-col items-center justify-center py-3 
-              ${pathname === href 
-                ? 'text-blue-600 bg-blue-50' 
-                : 'text-gray-600 hover:bg-gray-100'
-              }
-            `}
-          >
-            <Icon className="text-xl mb-1" />
-            <span className="text-xs">{label}</span>
-          </Link>
-        ))}
+      <div className="grid grid-cols-5 max-w-lg mx-auto">
+        {navItems.map(({ href, icon: Icon, label }) => {
+          const isActive = pathname === href;
+          return (
+            <Link 
+              key={href} 
+              href={href}
+              className={`
+                nav-item group
+                ${isActive ? 'nav-item-active' : 'nav-item-inactive'}
+              `}
+            >
+              <div className="relative">
+                <Icon className={`
+                  text-2xl mb-1 transition-transform duration-200
+                  ${isActive ? 'scale-110' : 'group-hover:scale-110'}
+                `} />
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[var(--primary)] rounded-full" />
+                )}
+              </div>
+              <span className={`text-xs font-medium ${
+                isActive ? 'text-[var(--primary)]' : 'text-gray-600'
+              }`}>
+                {label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

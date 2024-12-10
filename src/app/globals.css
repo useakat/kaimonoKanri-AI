@@ -2,8 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: #FF6B6B;
+  --secondary: #4ECDC4;
+  --accent: #FFE66D;
+  --background: #f7f9fc;
+  --text-primary: #2D3748;
+  --text-secondary: #4A5568;
+}
+
 body {
-  @apply bg-gray-50 text-gray-900;
+  @apply bg-[var(--background)] text-[var(--text-primary)] min-h-screen antialiased;
+}
+
+/* Layout container */
+.container-custom {
+  @apply max-w-2xl mx-auto px-4 py-6;
 }
 
 /* Custom scrollbar */
@@ -16,32 +30,143 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  @apply bg-[var(--primary)] bg-opacity-50 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  @apply bg-[var(--primary)] bg-opacity-70;
 }
 
 /* Button styles */
 .btn {
-  @apply px-4 py-2 rounded transition-colors duration-200 ease-in-out;
+  @apply px-4 py-2.5 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-md font-medium text-sm;
 }
 
 .btn-primary {
-  @apply bg-blue-500 text-white hover:bg-blue-600;
+  @apply bg-[var(--primary)] text-white hover:brightness-110 shadow-sm;
 }
 
 .btn-secondary {
-  @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  @apply bg-[var(--secondary)] text-white hover:brightness-110 shadow-sm;
 }
 
 .btn-danger {
-  @apply bg-red-500 text-white hover:bg-red-600;
+  @apply bg-red-500 text-white hover:brightness-110 shadow-sm;
 }
 
 /* Form input styles */
 .form-input {
-  @apply w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent bg-white shadow-sm text-[var(--text-primary)];
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-xl shadow-sm p-5 transition-all duration-200 hover:shadow-md border border-gray-100;
+}
+
+/* Tag styles */
+.tag {
+  @apply px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200;
+}
+
+.tag-active {
+  @apply bg-[var(--primary)] text-white shadow-sm;
+}
+
+.tag-inactive {
+  @apply bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200;
+}
+
+/* Navigation styles */
+.nav-item {
+  @apply flex flex-col items-center justify-center py-3 transition-all duration-200 text-sm;
+}
+
+.nav-item-active {
+  @apply text-[var(--primary)] bg-[var(--primary)] bg-opacity-10 font-medium;
+}
+
+.nav-item-inactive {
+  @apply text-[var(--text-secondary)] hover:bg-gray-50;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Stock control buttons */
+.stock-btn {
+  @apply rounded-full w-10 h-10 flex items-center justify-center text-white transition-all duration-200 hover:scale-110 shadow-sm;
+}
+
+.stock-decrease {
+  @apply bg-[var(--primary)];
+}
+
+.stock-increase {
+  @apply bg-[var(--secondary)];
+}
+
+/* Header styles */
+.page-header {
+  @apply text-2xl font-bold text-[var(--text-primary)] mb-6 tracking-tight;
+}
+
+/* Search bar styles */
+.search-bar {
+  @apply bg-white rounded-lg shadow-sm px-4 py-3.5 flex items-center space-x-3 mb-6 border border-gray-100;
+}
+
+/* List styles */
+.list-item {
+  @apply border-b border-gray-100 py-4 last:border-b-0;
+}
+
+/* Text styles */
+.text-label {
+  @apply text-sm font-medium text-[var(--text-secondary)] mb-1;
+}
+
+.text-value {
+  @apply text-base text-[var(--text-primary)];
+}
+
+/* Grid layout */
+.grid-custom {
+  @apply grid gap-4 sm:gap-6;
+}
+
+/* Status indicators */
+.status-dot {
+  @apply w-2.5 h-2.5 rounded-full;
+}
+
+/* Section spacing */
+.section-spacing {
+  @apply space-y-6;
 }

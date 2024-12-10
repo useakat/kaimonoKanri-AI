@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import BottomNavigation from '@/components/BottomNavigation'
+import BottomNavigation from '../components/BottomNavigation'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${inter.className} pb-16`}>
-        {children}
+        <main className="container-custom fade-in">
+          {children}
+        </main>
         <BottomNavigation />
       </body>
     </html>

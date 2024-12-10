@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaCog, FaBell, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaCog, FaBell, FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
 
 interface Product {
   id: string;
@@ -101,7 +101,6 @@ export default function InventoryPage() {
     router.push('/product');
   };
 
-  // フィルタリングと並び替えのロジック
   const filteredAndSortedProducts = products
     .filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -121,36 +120,56 @@ export default function InventoryPage() {
       }
     });
 
-  if (isLoading) return <div>読み込み中...</div>;
-  if (error) return <div>エラー: {error}</div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--primary)] border-t-transparent"></div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="flex items-center justify-center min-h-screen text-red-500">
+      <div className="card p-6">
+        <h2 className="text-xl font-bold mb-2">エラーが発生しました</h2>
+        <p>{error}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto p-4">
-      <header className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">在庫管理アプリ</h1>
-        <div className="flex space-x-2">
-          <button onClick={() => router.push('/settings')}><FaCog /></button>
-          <button className="relative">
-            <FaBell />
-            <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-1 text-xs">3</span>
+    <div className="container mx-auto p-4 pb-20 fade-in">
+      <header className="flex justify-between items-center mb-6 bg-white rounded-xl p-4 shadow-sm">
+        <h1 className="text-2xl font-bold text-gray-800">在庫管理</h1>
+        <div className="flex space-x-4">
+          <button 
+            onClick={() => router.push('/settings')}
+            className="btn-secondary rounded-full w-10 h-10 flex items-center justify-center"
+          >
+            <FaCog className="text-xl" />
+          </button>
+          <button className="btn-primary rounded-full w-10 h-10 flex items-center justify-center relative">
+            <FaBell className="text-xl" />
+            <span className="absolute -top-1 -right-1 bg-[var(--accent)] text-gray-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">3</span>
           </button>
         </div>
       </header>
 
-      <div className="search-filter mb-4">
-        <input 
-          type="text" 
-          placeholder="商品名、バーコード検索" 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
+      <div className="search-bar mb-6">
+        <div className="relative w-full">
+          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="商品名、バーコード検索" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-input pl-10"
+          />
+        </div>
         
-        <div className="tags-filter flex space-x-2 mt-2">
+        <div className="flex flex-wrap gap-2 mt-4">
           {['生鮮食品', '日用品', '調味料'].map(tag => (
             <button 
               key={tag} 
-              className={`px-2 py-1 rounded ${selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              className={`tag ${selectedTags.includes(tag) ? 'tag-active' : 'tag-inactive'}`}
               onClick={() => {
                 setSelectedTags(prev => 
                   prev.includes(tag) 
@@ -167,7 +186,7 @@ export default function InventoryPage() {
         <select 
           value={sortOption}
           onChange={(e) => setSortOption(e.target.value)}
-          className="w-full p-2 border rounded mt-2"
+          className="form-input mt-4"
         >
           <option>商品名（昇順）</option>
           <option>商品名（降順）</option>
@@ -176,46 +195,60 @@ export default function InventoryPage() {
         </select>
       </div>
 
-      <div className="product-list space-y-2">
+      <div className="grid gap-4">
         {filteredAndSortedProducts.map(product => (
           <div 
             key={product.id} 
-            className="flex items-center border p-2 rounded"
+            className="card flex items-center space-x-4 slide-up"
           >
-            <img 
-              src={product.image_path || '/placeholder-product.png'} 
-              alt={product.name} 
-              className="w-16 h-16 object-cover mr-4" 
-            />
-            <div className="flex-grow">
-              <h2 className="font-bold">{product.name}</h2>
-              <p>現在の在庫: {product.stock_quantity}</p>
-              <p className="text-gray-500">最小在庫: {product.minimum_stock}</p>
+            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+              <img 
+                src={product.image_path || '/placeholder-product.png'} 
+                alt={product.name} 
+                className="w-full h-full object-cover" 
+              />
             </div>
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={() => handleStockChange(product.id, -1)}
-                className="bg-red-500 text-white px-2 py-1 rounded"
-              >
-                -
-              </button>
+            <div className="flex-grow">
+              <h2 className="font-bold text-lg mb-1">{product.name}</h2>
+              <div className="flex items-center space-x-2 text-sm">
+                <span className={`px-2 py-1 rounded-full ${
+                  product.stock_quantity <= product.minimum_stock 
+                    ? 'bg-red-100 text-red-600' 
+                    : 'bg-green-100 text-green-600'
+                }`}>
+                  在庫: {product.stock_quantity}
+                </span>
+                <span className="text-gray-500">
+                  最小在庫: {product.minimum_stock}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col space-y-2">
               <button 
                 onClick={() => handleStockChange(product.id, 1)}
-                className="bg-green-500 text-white px-2 py-1 rounded"
+                className="stock-btn stock-increase"
               >
                 +
               </button>
               <button 
-                onClick={() => handleProductEdit(product.id)}
-                className="text-blue-500"
+                onClick={() => handleStockChange(product.id, -1)}
+                className="stock-btn stock-decrease"
               >
-                <FaEdit />
+                -
+              </button>
+            </div>
+            <div className="flex flex-col space-y-2">
+              <button 
+                onClick={() => handleProductEdit(product.id)}
+                className="text-[var(--secondary)] hover:scale-110 transition-transform"
+              >
+                <FaEdit className="text-xl" />
               </button>
               <button 
                 onClick={() => handleProductDelete(product.id)}
-                className="text-red-500"
+                className="text-[var(--primary)] hover:scale-110 transition-transform"
               >
-                <FaTrash />
+                <FaTrash className="text-xl" />
               </button>
             </div>
           </div>
@@ -223,10 +256,10 @@ export default function InventoryPage() {
       </div>
 
       <button 
-        className="fixed bottom-4 right-4 bg-blue-500 text-white rounded-full p-4 shadow-lg"
+        className="fixed bottom-20 right-4 bg-[var(--primary)] text-white rounded-full p-4 shadow-lg hover:scale-110 transition-transform"
         onClick={handleNewProduct}
       >
-        <FaPlus />
+        <FaPlus className="text-xl" />
       </button>
     </div>
   );

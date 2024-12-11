@@ -88,6 +88,10 @@ export default function InventoryPage() {
   };
 
   const handleProductEdit = (productId: string) => {
+    router.push(`/product?id=${productId}`);
+  };
+
+  const handleProductDetails = (productId: string) => {
     router.push(`/product-details/${productId}`);
   };
 
@@ -226,7 +230,7 @@ export default function InventoryPage() {
                 if ((e.target as HTMLElement).closest('button')) {
                   return;
                 }
-                handleProductEdit(product.id);
+                handleProductDetails(product.id);
               }}
             >
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">

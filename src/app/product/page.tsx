@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FaCamera, FaBarcode, FaSearch, FaTimes } from 'react-icons/fa';
 
-export default function ProductRegistrationPage() {
+export default function ProductPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('id');
+  const isEditMode = !!productId;
+
   const [productName, setProductName] = useState('');
   const [barcode, setBarcode] = useState('');
   const [minStock, setMinStock] = useState(0);
@@ -11,8 +17,40 @@ export default function ProductRegistrationPage() {
   const [purchaseSource, setPurchaseSource] = useState<'store' | 'online' | ''>('');
   const [productImage, setProductImage] = useState<string | null>(null);
   const [purchaseUrl, setPurchaseUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const availableTags = ['生鮮食品', '日用品', '調味料', '冷凍食品', '飲料'];
+
+  useEffect(() => {
+    if (productId) {
+      fetchProductData();
+    }
+  }, [productId]);
+
+  const fetchProductData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/products/${productId}`);
+      if (!response.ok) {
+        throw new Error('商品データの取得に失敗しました');
+      }
+      const data = await response.json();
+      
+      // フォームに商品データを設定
+      setProductName(data.name || '');
+      setBarcode(data.barcode || '');
+      setMinStock(data.minimum_stock || 0);
+      setTags(data.tags || []);
+      setPurchaseSource(data.purchase_location === 'ネット' ? 'online' : 'store');
+      setProductImage(data.image_path || null);
+      setPurchaseUrl(data.purchase_url || '');
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      alert('商品データの取得に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -33,34 +71,59 @@ export default function ProductRegistrationPage() {
     );
   };
 
-  const handleSave = () => {
-    // Validate inputs
+  const handleSave = async () => {
+    // 入力バリデーション
     if (!productName || minStock < 0) {
       alert('必須項目を確認してください');
       return;
     }
 
-    // Save product logic
     const productData = {
-      productName,
+      name: productName,
       barcode,
-      minStock,
+      minimum_stock: minStock,
       tags,
-      purchaseSource,
-      purchaseUrl: purchaseSource === 'online' ? purchaseUrl : '',
-      productImage
+      purchase_location: purchaseSource === 'online' ? 'ネット' : '店舗',
+      purchase_url: purchaseSource === 'online' ? purchaseUrl : '',
+      image_path: productImage
     };
 
-    console.log('Product to be saved:', productData);
-    // TODO: Implement actual save logic with API call
+    try {
+      const url = isEditMode ? `/api/products/${productId}` : '/api/products';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      if (!response.ok) {
+        throw new Error('商品の保存に失敗しました');
+      }
+
+      router.push('/inventory');
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('商品の保存に失敗しました');
+    }
   };
 
   const handleCancel = () => {
-    // Confirm cancellation
     if (window.confirm('変更を破棄してもよろしいですか？')) {
-      window.history.back();
+      router.push('/inventory');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--primary)] border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 max-w-md">
@@ -71,7 +134,9 @@ export default function ProductRegistrationPage() {
         >
           <FaTimes className="text-2xl" />
         </button>
-        <h1 className="text-xl font-bold">商品登録</h1>
+        <h1 className="text-xl font-bold">
+          {isEditMode ? '商品編集' : '商品登録'}
+        </h1>
         <button 
           onClick={handleSave} 
           className="text-blue-600 hover:text-blue-800 font-semibold"
